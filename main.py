@@ -6,6 +6,7 @@ import asyncio
 
 from utils.config import settings
 from utils.database import Database
+from utils.logger_config import logger
 
 load_dotenv()
 
@@ -32,6 +33,7 @@ async def main():
     await bot.load_extension("cogs.raids")
     await bot.load_extension("cogs.expedition")
     await bot.load_extension("cogs.utils")
+    logger.info("Bot loaded successfully.")
     await bot.start(TOKEN)
 
 
