@@ -3,3 +3,4 @@ python-dotenv
 SQLAlchemy
 requests
 pydantic-settings
+python-dateutil
