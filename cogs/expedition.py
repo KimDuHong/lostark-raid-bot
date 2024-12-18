@@ -100,8 +100,40 @@ class ExpeditionCog(commands.Cog):
         # 검색은 결과를 모두가 볼 수 있게 ephemeral=False로 설정
         process_message = f"{character_name} : 원정대 정보를 불러오는 중입니다."
         await interaction.response.send_message(process_message, ephemeral=False)
-        async with interaction.channel.typing():
-            # register=False 로 호출하면 검색 결과를 반환
+
+        # 타이핑 표시 시도
+        try:
+            async with interaction.channel.typing():
+                # register=False 로 호출하면 검색 결과를 반환
+                msg, expeditions = ExpeditionService().get_and_save_expedition(
+                    DiscordUserSchema(
+                        discord_id=interaction.user.id,
+                        discord_name=interaction.user.display_name,
+                        discord_avatar=(
+                            str(interaction.user.avatar.url)
+                            if interaction.user.avatar
+                            else None
+                        ),
+                    ),
+                    character_name,
+                    register=False,
+                )
+
+                if not expeditions or len(expeditions) == 0:
+                    await interaction.followup.send(msg, ephemeral=False)
+                    return
+
+                embeds = format_expeditions_to_embeds(msg, expeditions)
+
+                if len(embeds) > 1:
+                    view = ExpeditionNavigator(embeds)
+                    await interaction.followup.send(
+                        embed=embeds[0], view=view, ephemeral=False
+                    )
+                else:
+                    await interaction.followup.send(embed=embeds[0], ephemeral=False)
+        except discord.Forbidden:
+            # 타이핑 표시 권한이 없을 경우 바로 메시지 전송
             msg, expeditions = ExpeditionService().get_and_save_expedition(
                 DiscordUserSchema(
                     discord_id=interaction.user.id,
@@ -140,8 +172,29 @@ class ExpeditionCog(commands.Cog):
         # 등록은 본인만 볼 수 있게 ephemeral=True
         process_message = f"{character_name} : 원정대 정보를 등록/갱신중..."
         await interaction.response.send_message(process_message, ephemeral=True)
-        async with interaction.channel.typing():
-            # register=True 로 호출하면 저장만 수행 후 메시지 반환
+
+        # 타이핑 표시 시도
+        try:
+            async with interaction.channel.typing():
+                # register=True 로 호출하면 저장만 수행 후 메시지 반환
+                msg, expeditions = ExpeditionService().get_and_save_expedition(
+                    DiscordUserSchema(
+                        discord_id=interaction.user.id,
+                        discord_name=interaction.user.display_name,
+                        discord_avatar=(
+                            str(interaction.user.avatar.url)
+                            if interaction.user.avatar
+                            else None
+                        ),
+                    ),
+                    character_name,
+                    register=True,
+                )
+                await interaction.followup.send(
+                    f"원정대 정보가 등록되었습니다. ({msg})", ephemeral=True
+                )
+        except discord.Forbidden:
+            # 타이핑 표시 권한이 없을 경우 바로 메시지 전송
             msg, expeditions = ExpeditionService().get_and_save_expedition(
                 DiscordUserSchema(
                     discord_id=interaction.user.id,
